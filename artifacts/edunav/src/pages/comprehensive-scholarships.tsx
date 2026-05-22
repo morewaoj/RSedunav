@@ -955,11 +955,22 @@ export default function ComprehensiveScholarships() {
                       </div>
                       <div className="text-right shrink-0">
                         <div className="text-lg font-bold text-green-600">{formatAmount(rec.scholarship.amount)}</div>
-                        <Button asChild size="sm" className="mt-1 h-7 text-xs">
-                          <a href={rec.scholarship.applicationLink || '#'} target="_blank" rel="noopener noreferrer">
-                            Apply
-                          </a>
-                        </Button>
+                        {(() => {
+                          const link = (rec.scholarship as { applicationLink?: string; website?: string }).applicationLink
+                            || (rec.scholarship as { applicationLink?: string; website?: string }).website
+                            || '';
+                          return link ? (
+                            <Button asChild size="sm" className="mt-1 h-7 text-xs">
+                              <a href={link} target="_blank" rel="noopener noreferrer">
+                                Apply
+                              </a>
+                            </Button>
+                          ) : (
+                            <Button size="sm" className="mt-1 h-7 text-xs" disabled title="No application link available">
+                              Apply
+                            </Button>
+                          );
+                        })()}
                       </div>
                     </div>
                   </CardContent>
@@ -1076,12 +1087,30 @@ export default function ComprehensiveScholarships() {
                         {scholarship.provider}
                       </div>
 
-                      <Button asChild size="sm" data-testid={`apply-scholarship-${index}`}>
-                        <a href={scholarship.applicationLink || '#'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
-                          Apply Now
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </Button>
+                      {(() => {
+                        const link = scholarship.applicationLink
+                          || (scholarship as { website?: string }).website
+                          || '';
+                        return link ? (
+                          <Button asChild size="sm" data-testid={`apply-scholarship-${index}`}>
+                            <a href={link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                              Apply Now
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            disabled
+                            title="No application link available"
+                            data-testid={`apply-scholarship-${index}`}
+                            className="flex items-center gap-1"
+                          >
+                            Apply Now
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        );
+                      })()}
                     </div>
                   </CardContent>
                 </Card>
