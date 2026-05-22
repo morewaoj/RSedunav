@@ -1,19 +1,27 @@
 import mammoth from 'mammoth';
 
-// Dynamic import for pdf-parse due to ESM/CommonJS issues
-let pdfParse: any = null;
+// Dynamic import for pdf-parse due to ESM/CommonJS issues.
+// pdf-parse v2.x exports a `PDFParse` class instead of the old default function.
+let PDFParseCtor: any = null;
 
-async function getPdfParser() {
-  if (!pdfParse) {
+async function getPdfParseCtor() {
+  if (!PDFParseCtor) {
     try {
-      const module = await import('pdf-parse') as any;
-      pdfParse = module.default || module;
+      const mod = await import('pdf-parse') as any;
+      PDFParseCtor =
+        mod.PDFParse ||
+        mod.default?.PDFParse ||
+        mod.default ||
+        mod;
+      if (typeof PDFParseCtor !== 'function') {
+        throw new Error('pdf-parse did not export a PDFParse constructor');
+      }
     } catch (error) {
       console.error('Failed to load pdf-parse:', error);
       throw new Error('PDF parsing library not available');
     }
   }
-  return pdfParse;
+  return PDFParseCtor;
 }
 
 export interface ExtractionResult {
@@ -49,16 +57,24 @@ export async function extractTextFromResume(
 }
 
 async function extractFromPDF(buffer: Buffer): Promise<ExtractionResult> {
+  let parser: any = null;
   try {
-    const parser = await getPdfParser();
-    const data = await parser(buffer);
+    const PDFParse = await getPdfParseCtor();
+    parser = new PDFParse({ data: new Uint8Array(buffer) });
+    const result = await parser.getText();
     return {
-      text: data.text,
-      pageCount: data.numpages
+      text: result?.text ?? '',
+      pageCount: result?.total ?? result?.pages?.length,
     };
   } catch (error) {
     console.error('PDF extraction error:', error);
     throw new Error('Failed to extract text from PDF');
+  } finally {
+    try {
+      await parser?.destroy?.();
+    } catch {
+      // ignore cleanup errors
+    }
   }
 }
 
