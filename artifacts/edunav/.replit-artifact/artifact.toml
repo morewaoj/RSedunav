@@ -1,0 +1,26 @@
+kind = "web"
+previewPath = "/"
+title = "EduNav"
+version = "1.0.0"
+id = "artifacts/edunav"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21956
+
+[services.development]
+run = "pnpm --filter @workspace/edunav run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/edunav", "run", "build" ]
+run = [ "node", "artifacts/edunav/serve.mjs" ]
+
+[services.env]
+PORT = "21956"
+BASE_PATH = "/"

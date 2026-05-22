@@ -1,0 +1,9 @@
+[
+  { "slug": "01-home", "path": "/", "settle": 4500, "active": "Home" },
+  { "slug": "02-career-match", "path": "/careers", "settle": 6500, "active": "Careers" },
+  { "slug": "03-scholarships", "path": "/scholarships", "settle": 4500, "active": "Awards" },
+  { "slug": "04-scholarship-detail", "path": "/scholarship/1", "settle": 4500, "active": "Awards" },
+  { "slug": "05-college-detail", "path": "/college/stanford", "settle": 4500, "active": "Colleges" },
+  { "slug": "06-my-plan", "path": "/saved", "settle": 4500, "active": "Saved" },
+  { "slug": "07-profile", "path": "/profile", "settle": 4500, "active": "Profile" }
+]

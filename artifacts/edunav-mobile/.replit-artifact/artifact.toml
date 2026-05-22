@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/edunav-mobile/"
+title = "EduNav Mobile"
+version = "1.0.0"
+id = "artifacts/edunav-mobile"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/edunav-mobile/" ]
+localPort = 23074
+
+[services.development]
+run = "pnpm --filter @workspace/edunav-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/edunav-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/edunav-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "23074"
+BASE_PATH = "/edunav-mobile/"

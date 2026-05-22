@@ -1,0 +1,2 @@
+.migration-backup/attached_assets/Resume_1753820281179.csv filter=lfs diff=lfs merge=lfs -text
+.migration-backup/attached_assets/ScreenRecording_01-01-2026_14-26-34_1_1767295869658.mp4 filter=lfs diff=lfs merge=lfs -text
