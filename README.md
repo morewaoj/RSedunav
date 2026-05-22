@@ -11,7 +11,23 @@ RS EduNav helps students navigate college, career, and scholarship decisions wit
 
 ## Preview
 
-![RS EduNav sign-in](docs/screenshots/01-sign-in.png)
+### Your personalized dashboard
+![Dashboard](docs/screenshots/02-dashboard.png)
+
+### Career Explorer — pick your interests and skills
+![Career Explorer](docs/screenshots/06-career-explorer.png)
+
+### Scholarship matching
+![Scholarships](docs/screenshots/05-scholarships.png)
+
+### College detail pages
+![College detail](docs/screenshots/04-college-detail.png)
+
+### Real-time job market data
+![Job Market](docs/screenshots/03-job-market.png)
+
+### Sign in
+![Sign in](docs/screenshots/01-sign-in.png)
 
 ---
 
