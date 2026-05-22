@@ -148,8 +148,35 @@ export function setupAuth(app: Express) {
           lastName: user.lastName,
         });
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Registration error:", error);
+      const pgCode =
+        (error as { code?: string } | null)?.code ??
+        (error as { cause?: { code?: string } } | null)?.cause?.code;
+      const constraint =
+        (error as { constraint?: string } | null)?.constraint ??
+        (error as { cause?: { constraint?: string } } | null)?.cause?.constraint ??
+        "";
+      const detail = String(
+        (error as { detail?: string } | null)?.detail ??
+          (error as { cause?: { detail?: string } } | null)?.cause?.detail ??
+          "",
+      );
+      if (pgCode === "23505") {
+        if (constraint.includes("email") || detail.includes("(email)")) {
+          res.status(400).json({
+            message:
+              "An account with this email already exists. Try signing in, or use a different email.",
+          });
+          return;
+        }
+        if (constraint.includes("username") || detail.includes("(username)")) {
+          res.status(400).json({ message: "Username already exists" });
+          return;
+        }
+        res.status(400).json({ message: "An account with these details already exists." });
+        return;
+      }
       res.status(500).json({ message: "Registration failed" });
     }
     return;
