@@ -67,7 +67,7 @@ EduNav is built as a pnpm monorepo using TypeScript, incorporating web and mobil
 ## Mobile Store Release (iOS App Store + Google Play)
 - **Identifiers:** iOS bundle `com.rseducation.edunav`, Android package `com.rseducation.edunav` — set in `artifacts/edunav-mobile/app.json`. Change both before submitting under a different developer account.
 - **Build tool:** EAS Build (`artifacts/edunav-mobile/eas.json`). Profiles: `development` (dev client), `preview` (internal distribution: TestFlight + Play Internal), `production` (App Store + Play Store, auto-increments buildNumber/versionCode).
-- **API URL:** Production builds read `EXPO_PUBLIC_API_URL` (full https URL) — set in `eas.json` per profile (currently `https://edunav.replit.app`, the deployed host). Dev workflow continues to use `EXPO_PUBLIC_DOMAIN`.
+- **API URL:** Production builds read `EXPO_PUBLIC_API_URL` (full https URL) — set in `eas.json` per profile (currently `https://rsedunav.com`, the deployed host). Dev workflow continues to use `EXPO_PUBLIC_DOMAIN`.
 - **Android assets:** Adaptive icon configured (`android.adaptiveIcon`); release builds produce an `.aab` (`buildType: app-bundle`). Preview builds produce APKs for sideload testing.
 - **Splash screen:** Configured via the `expo-splash-screen` plugin (white background, centered icon at 220 px).
 - **Permissions declared:** iOS — `NSPhotoLibraryUsageDescription` (avatar), `NSDocumentsFolderUsageDescription` (resume), `ITSAppUsesNonExemptEncryption: false`. Android — `READ_EXTERNAL_STORAGE`, `READ_MEDIA_IMAGES`.

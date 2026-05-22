@@ -25,7 +25,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://edunav.replit.app"
+        "EXPO_PUBLIC_API_URL": "https://rsedunav.com"
       }
     },
     "screenshots": {
@@ -38,7 +38,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://edunav.replit.app",
+        "EXPO_PUBLIC_API_URL": "https://rsedunav.com",
         "EXPO_PUBLIC_DEMO": "1"
       }
     },
@@ -53,7 +53,7 @@
         "autoIncrement": "versionCode"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://edunav.replit.app"
+        "EXPO_PUBLIC_API_URL": "https://rsedunav.com"
       }
     }
   },

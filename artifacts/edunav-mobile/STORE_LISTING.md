@@ -74,10 +74,10 @@ The four pages below are served from the EduNav web artifact (`artifacts/edunav`
 If you publish the web app under a different hostname, update this section to
 match the new origin.
 
-- **Support URL:** https://edunav.replit.app/support
-- **Marketing URL:** https://edunav.replit.app/welcome
-- **Privacy policy URL:** https://edunav.replit.app/privacy
-- **Terms URL:** https://edunav.replit.app/terms
+- **Support URL:** https://rsedunav.com/support
+- **Marketing URL:** https://rsedunav.com/welcome
+- **Privacy policy URL:** https://rsedunav.com/privacy
+- **Terms URL:** https://rsedunav.com/terms
 
 ## Data safety / privacy disclosures
 
@@ -186,8 +186,8 @@ preserve them when re-running the pipeline.
 
 Before kicking off a production build:
 
-- [x] `EXPO_PUBLIC_API_URL` in `eas.json` (preview + production) points at the live API host (`https://edunav.replit.app`).
-- [x] The deployed API CORS allowlist accepts the production web origin (`https://edunav.replit.app`), Replit dev/preview domains, and no-Origin native mobile fetches (`artifacts/api-server/src/app.ts`).
+- [x] `EXPO_PUBLIC_API_URL` in `eas.json` (preview + production) points at the live API host (`https://rsedunav.com`).
+- [x] The deployed API CORS allowlist accepts the production web origin (`https://rsedunav.com`), Replit dev/preview domains, and no-Origin native mobile fetches (`artifacts/api-server/src/app.ts`).
 - [ ] `extra.eas.projectId` in `app.json` is populated (run `eas init` to fill it in).
 - [ ] Bundle identifier and Android package match what's registered in App Store Connect / Play Console.
 - [ ] All four legal URLs above resolve.

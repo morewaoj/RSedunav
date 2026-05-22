@@ -168,6 +168,9 @@ app.use('/api/login', authLimiter);
 app.use('/api/register', authLimiter);
 
 const STATIC_ALLOWED_ORIGINS = new Set<string>([
+  "https://rsedunav.com",
+  "https://www.rsedunav.com",
+  "https://rs-educationavigation.replit.app",
   "https://edunav.replit.app",
 ]);
 
