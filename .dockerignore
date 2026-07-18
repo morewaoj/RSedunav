@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+.git
+docs
+*.zip
+*.pdf
+*.png
+artifacts/edunav-mobile/android
+artifacts/edunav-mobile/ios
