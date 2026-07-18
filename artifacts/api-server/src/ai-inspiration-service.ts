@@ -1,4 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { hasAnthropicKey } from './lib/ai-availability';
+import { STATIC_INSPIRATIONS } from './static-career-inspiration';
 
 // the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025. Use this by default unless user has already selected claude-3-7-sonnet-20250219
 const anthropic = new Anthropic({
@@ -23,9 +25,13 @@ export class AIInspirationService {
     skills?: string[],
     personalityTraits?: string[]
   ): Promise<CareerInspiration[]> {
+    if (!hasAnthropicKey()) {
+      return this.getStaticInspirations(interests, skills);
+    }
+
     try {
       const prompt = this.buildInspirationPrompt(interests, skills, personalityTraits);
-      
+
       const response = await anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2000,
@@ -41,9 +47,48 @@ export class AIInspirationService {
       const content = textBlock ? (textBlock as any).text : '';
       return this.parseCareerInspirations(content);
     } catch (error) {
-      console.error('AI inspiration generation error:', error);
-      throw new Error('Failed to generate career inspiration');
+      console.error('AI inspiration generation error, using static fallback:', error);
+      return this.getStaticInspirations(interests, skills);
     }
+  }
+
+  // Picks 3 curated entries, scored by keyword overlap with the user's
+  // interests/skills against each entry's title/description/related fields.
+  // Falls back to a random selection when there's nothing to match on.
+  private getStaticInspirations(interests?: string[], skills?: string[]): CareerInspiration[] {
+    const keywords = [...(interests || []), ...(skills || [])].map(k => k.toLowerCase());
+
+    if (keywords.length === 0) {
+      return this.shuffle(STATIC_INSPIRATIONS).slice(0, 3);
+    }
+
+    const scored = STATIC_INSPIRATIONS.map(entry => {
+      const haystack = [
+        entry.careerTitle,
+        entry.description,
+        ...entry.relatedFields,
+      ].join(' ').toLowerCase();
+
+      const score = keywords.reduce(
+        (sum, keyword) => sum + (haystack.includes(keyword) ? 1 : 0),
+        0,
+      );
+      return { entry, score };
+    });
+
+    const matched = scored.filter(s => s.score > 0).sort((a, b) => b.score - a.score);
+    const chosen = matched.length > 0 ? matched.map(s => s.entry) : this.shuffle(STATIC_INSPIRATIONS);
+
+    return chosen.slice(0, 3);
+  }
+
+  private shuffle<T>(items: T[]): T[] {
+    const copy = [...items];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
   }
 
   private buildInspirationPrompt(

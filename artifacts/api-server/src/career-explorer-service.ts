@@ -4,6 +4,7 @@ import { aiScreeningAnalyzer } from './ai-screening-dataset-analyzer';
 import { syntheticCareerAnalyzer } from './synthetic-career-dataset-analyzer';
 import { topKAnalyzer } from './top-k-analyzer';
 import { claudePipelineService } from './claude-pipeline-service';
+import { hasAnthropicKey } from './lib/ai-availability';
 
 interface CareerExplorationResult {
   career: {
@@ -49,10 +50,12 @@ export class CareerExplorerService {
 
   // Enhanced career exploration with Claude AI Pipeline + dataset insights
   public async exploreCareerByInterest(interest: string): Promise<CareerExplorationResult[]> {
-    console.log(`🤖 Claude Pipeline: Exploring careers for interest: ${interest}`);
-    
-    // Try Claude AI pipeline first for intelligent analysis
+    // Try Claude AI pipeline first for intelligent analysis, when configured
     try {
+      if (!hasAnthropicKey()) {
+        throw new Error("ANTHROPIC_API_KEY not configured; using dataset analysis");
+      }
+      console.log(`🤖 Claude Pipeline: Exploring careers for interest: ${interest}`);
       const claudeInput = {
         interest,
         skills: this.getCommonSkillsForInterest(interest),
