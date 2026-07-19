@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: rsedunav-api
+    runtime: docker
+    repo: https://github.com/morewaoj/RSedunav.git
+    dockerfilePath: ./artifacts/api-server/Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /api/healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: COLLEGE_SCORECARD_API_KEY
+        sync: false
