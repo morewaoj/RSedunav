@@ -1,7 +1,7 @@
 {
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm --filter @workspace/edunav run build",
-  "outputDirectory": "artifacts/edunav/dist/public",
+  "outputDirectory": "dist/public",
   "rewrites": [
     { "source": "/api/:path*", "destination": "https://rsedunav-api.onrender.com/api/:path*" }
   ]
