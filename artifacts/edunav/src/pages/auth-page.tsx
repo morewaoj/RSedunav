@@ -7,7 +7,8 @@ import { Link, Redirect, useSearch } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
 import { readPendingSaveSummary } from "@/components/saved-plan-button";
-import logoImage from "@assets/097FA70F-1753-4CC9-83A6-E318880BD31D_1771156440772.png";
+
+const logoImage = "/edunav-logo.png";
 
 export default function AuthPage() {
   const { user, isLoading, login, register, isLoggingIn, isRegistering } = useAuth();
