@@ -1,5 +1,6 @@
 import { analyzeResumeWithClaude } from './claude-resume-analyzer';
 import { SmartScholarshipMatcher } from './smart-scholarship-matcher';
+import { hasAnthropicKey } from './lib/ai-availability';
 
 interface MLCareerRequest {
   interests: string[];
@@ -232,8 +233,8 @@ export class MLCareerMatcher {
     let enhancedInterests = request.interests || [];
     let enhancedSkills = request.skills || [];
 
-    // Use Claude AI for resume analysis if resume text provided
-    if (request.resumeText && request.resumeText.trim().length > 50) {
+    // Use Claude AI for resume analysis if resume text provided and a key is configured
+    if (request.resumeText && request.resumeText.trim().length > 50 && hasAnthropicKey()) {
       try {
         console.log('Analyzing resume with Claude AI...');
         resumeAnalysis = await analyzeResumeWithClaude(request.resumeText);

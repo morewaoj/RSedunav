@@ -50,6 +50,7 @@ import { mlResumeParser } from '../ml-resume-parser';
 import { callClaudeForExtraction, matchCareersFromClaudeData, matchScholarshipsFromClaudeData } from '../claude-extraction-service';
 import * as scholarshipService from '../comprehensive-scholarship-service';
 import { enhancedFallbackAnalyzer } from '../enhanced-fallback-analyzer';
+import { hasAnthropicKey } from '../lib/ai-availability';
 import multer from "multer";
 import { promises as fs } from "fs";
 import path from "path";
@@ -3416,14 +3417,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
-      console.log("Starting Claude-powered resume analysis for user:", userId);
+      console.log(
+        hasAnthropicKey()
+          ? "Starting Claude-powered resume analysis for user:"
+          : "Starting algorithmic resume analysis (no ANTHROPIC_API_KEY configured) for user:",
+        userId,
+      );
 
       let analysisResult;
       let careerRecommendations = [];
       let scholarshipMatches = [];
       let analysisMethod = 'claude_extraction';
-      
+
       try {
+        if (!hasAnthropicKey()) {
+          throw new Error("ANTHROPIC_API_KEY not configured; using algorithmic analysis");
+        }
+
         // Step 1: Use Dataset-Enhanced Claude extraction with 76,000+ resume patterns
         console.log("🧠 Using Dataset-Enhanced Analyzer (trained on 76,000+ resumes)...");
         const datasetResult = await datasetEnhancedAnalyzer.performDatasetEnhancedExtraction(resumeText);
@@ -3666,7 +3676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return properly grouped results for frontend tabs
       res.json({
         success: true,
-        message: `Resume analyzed with ${analysisMethod === 'enhanced_semantic' ? 'enhanced semantic matching' : 'Claude AI fallback'}`,
+        message: `Resume analyzed with ${analysisMethod === 'claude_extraction' ? 'Claude AI extraction' : 'algorithmic skill matching'}`,
         redirectTo: "/profile/career-recommendations",
         
         // Analysis data for Resume Analysis tab
