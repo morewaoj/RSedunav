@@ -1647,8 +1647,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // FELLOWSHIP ENDPOINTS
   // ============================================
 
-  // Seed fellowships on startup
-  await fellowshipService.seedFellowships();
+  // Seed fellowships on startup. A transient DB error here (e.g. a Neon
+  // endpoint waking up from idle) must not take down the whole server —
+  // matches how initializeDatabase() in index.ts already degrades.
+  try {
+    await fellowshipService.seedFellowships();
+  } catch (err) {
+    console.error("Fellowship seeding failed — continuing with existing data:", err);
+  }
 
   // Get all fellowships
   app.get("/api/fellowships", async (req, res) => {
