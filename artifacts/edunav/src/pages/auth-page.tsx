@@ -8,8 +8,6 @@ import {
   Eye,
   EyeOff,
   GraduationCap,
-  Users,
-  School,
   Target,
   HandCoins,
   TrendingUp,
@@ -24,29 +22,17 @@ import { readPendingSaveSummary } from "@/components/saved-plan-button";
 
 const logoImage = "/edunav-logo.png";
 
-// Purely a self-identification affordance for first-time visitors — there's
-// no "role" field on the user record, clicking one just scrolls to the
-// auth card in sign-up mode. Not persisted or sent anywhere.
-const ROLES = [
-  {
-    id: "student",
-    icon: GraduationCap,
-    title: "I'm a Student",
-    description: "Find colleges, scholarships & careers matched to you.",
-  },
-  {
-    id: "parent",
-    icon: Users,
-    title: "I'm a Parent",
-    description: "Support your child's college & career planning.",
-  },
-  {
-    id: "counselor",
-    icon: School,
-    title: "I'm a Counselor",
-    description: "Guide multiple students with smart tools.",
-  },
-] as const;
+// Only "Student" is listed here — there's no parent/counselor-specific
+// experience in the product (no role field, no differentiated dashboard
+// or flow), so showing those as options would imply a feature that
+// doesn't exist. This single card is purely a "get started" affordance:
+// clicking it scrolls to the auth card in sign-up mode, nothing is
+// persisted or sent anywhere.
+const ROLE = {
+  icon: GraduationCap,
+  title: "I'm a Student",
+  description: "Find colleges, scholarships & careers matched to you.",
+} as const;
 
 const HIGHLIGHTS = [
   { icon: Target, label: "Best-fit colleges", accent: "bg-emerald-100 text-emerald-700" },
@@ -269,27 +255,19 @@ export default function AuthPage() {
             {isLoginMode ? "Sign in to continue your journey" : "Create your account"}
           </h2>
           <p className="mt-2 text-[#bcd6c8]">
-            Choose how you'd like to get started, or {isLoginMode ? "sign in" : "sign up"} below.
+            Get started below, or {isLoginMode ? "sign in" : "sign up"} if you already have an account.
           </p>
 
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {ROLES.map((role) => {
-              const Icon = role.icon;
-              return (
-                <button
-                  key={role.id}
-                  type="button"
-                  onClick={() => scrollToAuthCard("signup")}
-                  data-testid={`button-role-${role.id}`}
-                  className="rounded-2xl border border-white/10 bg-[#0f3b28] p-6 text-left transition-all hover:-translate-y-1 hover:bg-[#124732]"
-                >
-                  <Icon className="mb-3 h-6 w-6 text-emerald-300" aria-hidden="true" />
-                  <h3 className="text-base font-bold text-white">{role.title}</h3>
-                  <p className="mt-1 text-sm text-[#a9c9ba]">{role.description}</p>
-                </button>
-              );
-            })}
-          </div>
+          <button
+            type="button"
+            onClick={() => scrollToAuthCard("signup")}
+            data-testid="button-role-student"
+            className="mx-auto mt-10 block w-full max-w-sm rounded-2xl border border-white/10 bg-[#0f3b28] p-6 text-left transition-all hover:-translate-y-1 hover:bg-[#124732]"
+          >
+            <ROLE.icon className="mb-3 h-6 w-6 text-emerald-300" aria-hidden="true" />
+            <h3 className="text-base font-bold text-white">{ROLE.title}</h3>
+            <p className="mt-1 text-sm text-[#a9c9ba]">{ROLE.description}</p>
+          </button>
 
           <div
             ref={authCardRef}
