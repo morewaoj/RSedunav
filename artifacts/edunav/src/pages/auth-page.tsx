@@ -1,14 +1,44 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Bookmark, Loader2, Eye, EyeOff } from "lucide-react";
+import {
+  Bookmark,
+  Loader2,
+  Eye,
+  EyeOff,
+  GraduationCap,
+  Target,
+  HandCoins,
+  TrendingUp,
+  ShieldCheck,
+  Sparkles,
+  CircleCheck,
+} from "lucide-react";
 import { Link, Redirect, useSearch } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
 import { readPendingSaveSummary } from "@/components/saved-plan-button";
 
 const logoImage = "/edunav-logo.png";
+
+// Only "Student" is listed here — there's no parent/counselor-specific
+// experience in the product (no role field, no differentiated dashboard
+// or flow), so showing those as options would imply a feature that
+// doesn't exist. This single card is purely a "get started" affordance:
+// clicking it scrolls to the auth card in sign-up mode, nothing is
+// persisted or sent anywhere.
+const ROLE = {
+  icon: GraduationCap,
+  title: "I'm a Student",
+  description: "Find colleges, scholarships & careers matched to you.",
+} as const;
+
+const HIGHLIGHTS = [
+  { icon: Target, label: "Best-fit colleges", accent: "bg-emerald-100 text-emerald-700" },
+  { icon: HandCoins, label: "Scholarships matched", accent: "bg-violet-100 text-violet-700" },
+  { icon: TrendingUp, label: "Career insights", accent: "bg-rose-100 text-rose-700" },
+] as const;
 
 export default function AuthPage() {
   const { user, isLoading, login, register, isLoggingIn, isRegistering } = useAuth();
@@ -17,6 +47,7 @@ export default function AuthPage() {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const authCardRef = useRef<HTMLDivElement>(null);
 
   const redirectTo = useMemo(() => {
     const params = new URLSearchParams(search);
@@ -47,14 +78,18 @@ export default function AuthPage() {
     lastName: "",
   });
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="w-8 h-8 animate-spin text-[#6C2BD9]" />
-      </div>
-    );
-  }
+  const scrollToAuthCard = (mode: "login" | "signup") => {
+    setIsLoginMode(mode === "login");
+    authCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
 
+  // Deliberately not gating the whole page behind isLoading: this route
+  // doubles as the marketing landing page (see App.tsx — "/" bounces
+  // anonymous visitors here), and the /api/auth/user check it depends on
+  // goes through the free-tier Render backend, which can take up to ~50s
+  // to wake from a cold start. None of the hero/marketing content below
+  // needs that check to render, so only the auth card itself shows a
+  // scoped loading state while it's pending.
   if (user) {
     return <Redirect to={redirectTo} />;
   }
@@ -104,292 +139,408 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 py-8 sm:py-12">
-      <div className="w-full max-w-[400px]">
-        <div className="flex flex-col items-center mb-8">
-          <img
-            src={logoImage}
-            alt="RS EduNav"
-            className="w-16 h-16 sm:w-20 sm:h-20 object-contain mb-4"
-          />
-          <h1 className="text-2xl sm:text-[28px] font-bold tracking-tight text-gray-900">
-            RS EduNav
-          </h1>
-          <p className="text-sm text-gray-400 mt-1 tracking-wide">
-            Educational Intelligence
-          </p>
+    <div className="min-h-screen bg-[#FFF8EF]">
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 py-5 sm:px-12">
+        <div className="flex items-center gap-2.5">
+          <img src={logoImage} alt="RS EduNav" className="h-9 w-9 object-contain" />
+          <span className="text-lg font-extrabold tracking-tight text-gray-900">RS EduNav</span>
         </div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => scrollToAuthCard("login")}
+            data-testid="button-hero-login"
+            className="rounded-full border border-gray-900 px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-gray-900 hover:text-white"
+          >
+            Log in
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollToAuthCard("signup")}
+            data-testid="button-hero-get-started"
+            className="rounded-full bg-gradient-to-r from-[#6C2BD9] to-[#A855F7] px-5 py-2 text-sm font-semibold text-white shadow-md shadow-[#6C2BD9]/30 transition-opacity hover:opacity-90"
+          >
+            Get Started
+          </button>
+        </div>
+      </header>
 
-        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 sm:p-8">
-          {pendingSaveLabel ? (
-            <div
-              className="mb-5 flex items-start gap-2.5 rounded-lg border border-[#6C2BD9]/20 bg-[#6C2BD9]/5 px-3 py-2.5 text-sm text-gray-700"
-              data-testid="banner-pending-save"
-            >
-              <Bookmark
-                className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#6C2BD9]"
-                aria-hidden="true"
-              />
-              <span>
-                {isLoginMode ? "Sign in" : "Sign up"} to save{" "}
-                <span
-                  className="font-semibold text-gray-900"
-                  data-testid="text-pending-save-label"
-                >
-                  {pendingSaveLabel}
-                </span>{" "}
-                to your plan.
+      {/* Hero */}
+      <section className="relative overflow-hidden px-6 pb-20 pt-6 sm:px-12 sm:pb-28">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -left-20 -top-24 h-80 w-80 rounded-full bg-amber-300/40 blur-2xl animate-float"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-10 bottom-0 h-64 w-64 rounded-full bg-[#A855F7]/25 blur-2xl animate-float [animation-delay:2s]"
+        />
+
+        <div className="relative z-10 mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
+          <div>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-[#134E36] shadow-sm">
+              <Sparkles className="h-3.5 w-3.5 text-[#6C2BD9]" aria-hidden="true" />
+              Educational intelligence, personalized to you
+            </div>
+            <h1 className="text-4xl font-extrabold leading-[1.08] tracking-tight text-gray-900 sm:text-5xl">
+              Find your{" "}
+              <span className="bg-gradient-to-r from-[#6C2BD9] to-[#A855F7] bg-clip-text text-transparent">
+                path forward
+              </span>{" "}
+              — college, career, and beyond.
+            </h1>
+            <p className="mt-5 max-w-md text-lg leading-relaxed text-gray-600">
+              RS EduNav matches you with the right schools, scholarships, and career paths —
+              personalized to you, not a generic list.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-gray-700">
+              <span className="flex items-center gap-2">
+                <CircleCheck className="h-4 w-4 text-[#134E36]" aria-hidden="true" />
+                100% free to start
+              </span>
+              <span className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-[#134E36]" aria-hidden="true" />
+                Privacy-first
+              </span>
+              <span className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-[#134E36]" aria-hidden="true" />
+                Personalized in minutes
               </span>
             </div>
-          ) : null}
-          <h2 className="text-lg font-semibold text-gray-900 text-center mb-1">
-            {isLoginMode ? "Sign in to your account" : "Create your account"}
-          </h2>
-          <p className="text-sm text-gray-400 text-center mb-6">
-            {isLoginMode
-              ? "Enter your credentials to continue"
-              : "Get started with personalized guidance"}
-          </p>
+          </div>
 
-          {isLoginMode ? (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="login-username" className="text-sm font-medium text-gray-700">
-                  Username
-                </Label>
-                <Input
-                  id="login-username"
-                  type="text"
-                  placeholder="Enter your username"
-                  value={loginForm.username}
-                  onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                  data-testid="input-login-username"
-                  className="h-11 rounded-lg border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="login-password" className="text-sm font-medium text-gray-700">
-                  Password
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="login-password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={loginForm.password}
-                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                    data-testid="input-login-password"
-                    className="h-11 rounded-lg border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={isLoggingIn}
-                data-testid="button-login"
-                className="w-full h-11 rounded-lg bg-gradient-to-r from-[#6C2BD9] to-[#A855F7] text-white font-medium text-sm hover:opacity-90 active:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
-              >
-                {isLoggingIn ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  "Sign In"
-                )}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="register-firstName" className="text-sm font-medium text-gray-700">
-                    First Name
-                  </Label>
-                  <Input
-                    id="register-firstName"
-                    type="text"
-                    placeholder="John"
-                    value={registerForm.firstName}
-                    onChange={(e) => setRegisterForm({ ...registerForm, firstName: e.target.value })}
-                    data-testid="input-register-firstName"
-                    className="h-11 rounded-lg border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="register-lastName" className="text-sm font-medium text-gray-700">
-                    Last Name
-                  </Label>
-                  <Input
-                    id="register-lastName"
-                    type="text"
-                    placeholder="Doe"
-                    value={registerForm.lastName}
-                    onChange={(e) => setRegisterForm({ ...registerForm, lastName: e.target.value })}
-                    data-testid="input-register-lastName"
-                    className="h-11 rounded-lg border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="register-email" className="text-sm font-medium text-gray-700">
-                  Email
-                </Label>
-                <Input
-                  id="register-email"
-                  type="email"
-                  placeholder="john@example.com"
-                  value={registerForm.email}
-                  onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
-                  data-testid="input-register-email"
-                  className="h-11 rounded-lg border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="register-username" className="text-sm font-medium text-gray-700">
-                  Username <span className="text-[#A855F7]">*</span>
-                </Label>
-                <Input
-                  id="register-username"
-                  type="text"
-                  placeholder="Choose a username"
-                  value={registerForm.username}
-                  onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
-                  required
-                  data-testid="input-register-username"
-                  className="h-11 rounded-lg border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="register-password" className="text-sm font-medium text-gray-700">
-                  Password <span className="text-[#A855F7]">*</span>
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="register-password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Min 6 characters"
-                    value={registerForm.password}
-                    onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                    required
-                    data-testid="input-register-password"
-                    className="h-11 rounded-lg border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="register-confirmPassword" className="text-sm font-medium text-gray-700">
-                  Confirm Password <span className="text-[#A855F7]">*</span>
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="register-confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm your password"
-                    value={registerForm.confirmPassword}
-                    onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
-                    required
-                    data-testid="input-register-confirmPassword"
-                    className="h-11 rounded-lg border-gray-200 bg-gray-200/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-              <p
-                className="text-xs text-gray-500 text-center leading-relaxed mt-2"
-                data-testid="text-signup-terms-notice"
-              >
-                By creating an account, you agree to our{" "}
-                <a
-                  href="/terms"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-[#6C2BD9] hover:underline"
-                  data-testid="link-signup-terms"
+          <div className="relative mx-auto h-[340px] w-full max-w-sm">
+            <div className="absolute left-6 top-4 h-[300px] w-[240px] rounded-3xl bg-gradient-to-br from-[#A855F7] via-[#8B5CF6] to-[#6C2BD9] shadow-2xl" />
+            {HIGHLIGHTS.map((item, i) => {
+              const Icon = item.icon;
+              const position = [
+                "right-0 top-0",
+                "left-0 bottom-10",
+                "right-4 -bottom-2",
+              ][i];
+              const delay = ["", "[animation-delay:1.1s]", "[animation-delay:0.6s]"][i];
+              return (
+                <div
+                  key={item.label}
+                  className={`absolute ${position} flex animate-float ${delay} items-center gap-2.5 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-gray-800 shadow-xl`}
                 >
-                  Terms of Service
-                </a>{" "}
-                and{" "}
-                <a
-                  href="/privacy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-[#6C2BD9] hover:underline"
-                  data-testid="link-signup-privacy"
-                >
-                  Privacy Policy
-                </a>
-                .
-              </p>
-              <button
-                type="submit"
-                disabled={isRegistering}
-                data-testid="button-register"
-                className="w-full h-11 rounded-lg bg-gradient-to-r from-[#6C2BD9] to-[#A855F7] text-white font-medium text-sm hover:opacity-90 active:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
-              >
-                {isRegistering ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Creating account...
-                  </>
-                ) : (
-                  "Create Account"
-                )}
-              </button>
-            </form>
-          )}
-
-          <div className="mt-5 pt-5 border-t border-gray-100 text-center">
-            <button
-              type="button"
-              onClick={() => setIsLoginMode(!isLoginMode)}
-              className="text-sm text-gray-500 hover:text-[#6C2BD9] transition-colors"
-              data-testid="button-toggle-auth-mode"
-            >
-              {isLoginMode ? (
-                <>
-                  Don't have an account?{" "}
-                  <span className="font-medium text-[#6C2BD9]">Sign up</span>
-                </>
-              ) : (
-                <>
-                  Already have an account?{" "}
-                  <span className="font-medium text-[#6C2BD9]">Sign in</span>
-                </>
-              )}
-            </button>
+                  <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${item.accent}`}>
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  {item.label}
+                </div>
+              );
+            })}
           </div>
         </div>
+      </section>
 
-        <div className="mt-8 flex items-center justify-center gap-6 text-xs text-gray-300">
-          <span>Careers</span>
-          <span className="w-1 h-1 rounded-full bg-gray-200" />
-          <span>Colleges</span>
-          <span className="w-1 h-1 rounded-full bg-gray-200" />
-          <span>Scholarships</span>
+      {/* Wave divider into the forest-green section below */}
+      <svg
+        viewBox="0 0 1440 100"
+        preserveAspectRatio="none"
+        className="block h-16 w-full sm:h-20"
+        aria-hidden="true"
+      >
+        <path fill="#134E36" d="M0,40 C240,90 480,0 720,30 C960,60 1200,100 1440,40 L1440,100 L0,100 Z" />
+      </svg>
+
+      {/* Role selector + auth card */}
+      <section className="bg-[#134E36] px-6 py-16 sm:px-12 sm:py-20">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="text-2xl font-extrabold text-white sm:text-3xl">
+            {isLoginMode ? "Sign in to continue your journey" : "Create your account"}
+          </h2>
+          <p className="mt-2 text-[#bcd6c8]">
+            Get started below, or {isLoginMode ? "sign in" : "sign up"} if you already have an account.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => scrollToAuthCard("signup")}
+            data-testid="button-role-student"
+            className="mx-auto mt-10 block w-full max-w-sm rounded-2xl border border-white/10 bg-[#0f3b28] p-6 text-left transition-all hover:-translate-y-1 hover:bg-[#124732]"
+          >
+            <ROLE.icon className="mb-3 h-6 w-6 text-emerald-300" aria-hidden="true" />
+            <h3 className="text-base font-bold text-white">{ROLE.title}</h3>
+            <p className="mt-1 text-sm text-[#a9c9ba]">{ROLE.description}</p>
+          </button>
+
+          <div
+            ref={authCardRef}
+            className="mx-auto mt-12 max-w-[440px] rounded-3xl bg-white p-6 text-left shadow-2xl sm:p-8"
+          >
+            {pendingSaveLabel ? (
+              <div
+                className="mb-5 flex items-start gap-2.5 rounded-lg border border-[#6C2BD9]/20 bg-[#6C2BD9]/5 px-3 py-2.5 text-sm text-gray-700"
+                data-testid="banner-pending-save"
+              >
+                <Bookmark
+                  className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#6C2BD9]"
+                  aria-hidden="true"
+                />
+                <span>
+                  {isLoginMode ? "Sign in" : "Sign up"} to save{" "}
+                  <span
+                    className="font-semibold text-gray-900"
+                    data-testid="text-pending-save-label"
+                  >
+                    {pendingSaveLabel}
+                  </span>{" "}
+                  to your plan.
+                </span>
+              </div>
+            ) : null}
+            <h2 className="text-lg font-semibold text-gray-900 text-center mb-1">
+              {isLoginMode ? "Sign in to your account" : "Create your account"}
+            </h2>
+            <p className="text-sm text-gray-400 text-center mb-6">
+              {isLoginMode
+                ? "Enter your credentials to continue"
+                : "Get started with personalized guidance"}
+            </p>
+
+            {isLoading ? (
+              <div className="flex justify-center py-8" data-testid="auth-form-loading">
+                <Loader2 className="w-6 h-6 animate-spin text-[#6C2BD9]" />
+              </div>
+            ) : isLoginMode ? (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="login-username" className="text-sm font-medium text-gray-700">
+                    Username
+                  </Label>
+                  <Input
+                    id="login-username"
+                    type="text"
+                    placeholder="Enter your username"
+                    value={loginForm.username}
+                    onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                    data-testid="input-login-username"
+                    className="h-11 rounded-lg border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="login-password" className="text-sm font-medium text-gray-700">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="login-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      value={loginForm.password}
+                      onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                      data-testid="input-login-password"
+                      className="h-11 rounded-lg border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isLoggingIn}
+                  data-testid="button-login"
+                  className="w-full h-11 rounded-lg bg-gradient-to-r from-[#6C2BD9] to-[#A855F7] text-white font-medium text-sm hover:opacity-90 active:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+                >
+                  {isLoggingIn ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    "Sign In"
+                  )}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="register-firstName" className="text-sm font-medium text-gray-700">
+                      First Name
+                    </Label>
+                    <Input
+                      id="register-firstName"
+                      type="text"
+                      placeholder="John"
+                      value={registerForm.firstName}
+                      onChange={(e) => setRegisterForm({ ...registerForm, firstName: e.target.value })}
+                      data-testid="input-register-firstName"
+                      className="h-11 rounded-lg border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="register-lastName" className="text-sm font-medium text-gray-700">
+                      Last Name
+                    </Label>
+                    <Input
+                      id="register-lastName"
+                      type="text"
+                      placeholder="Doe"
+                      value={registerForm.lastName}
+                      onChange={(e) => setRegisterForm({ ...registerForm, lastName: e.target.value })}
+                      data-testid="input-register-lastName"
+                      className="h-11 rounded-lg border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="register-email" className="text-sm font-medium text-gray-700">
+                    Email
+                  </Label>
+                  <Input
+                    id="register-email"
+                    type="email"
+                    placeholder="john@example.com"
+                    value={registerForm.email}
+                    onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                    data-testid="input-register-email"
+                    className="h-11 rounded-lg border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="register-username" className="text-sm font-medium text-gray-700">
+                    Username <span className="text-[#A855F7]">*</span>
+                  </Label>
+                  <Input
+                    id="register-username"
+                    type="text"
+                    placeholder="Choose a username"
+                    value={registerForm.username}
+                    onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
+                    required
+                    data-testid="input-register-username"
+                    className="h-11 rounded-lg border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="register-password" className="text-sm font-medium text-gray-700">
+                    Password <span className="text-[#A855F7]">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="register-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Min 6 characters"
+                      value={registerForm.password}
+                      onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                      required
+                      data-testid="input-register-password"
+                      className="h-11 rounded-lg border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="register-confirmPassword" className="text-sm font-medium text-gray-700">
+                    Confirm Password <span className="text-[#A855F7]">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="register-confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm your password"
+                      value={registerForm.confirmPassword}
+                      onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
+                      required
+                      data-testid="input-register-confirmPassword"
+                      className="h-11 rounded-lg border-gray-200 bg-gray-200/50 focus:bg-white focus:border-[#6C2BD9] focus:ring-[#6C2BD9]/20 transition-colors pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <p
+                  className="text-xs text-gray-500 text-center leading-relaxed mt-2"
+                  data-testid="text-signup-terms-notice"
+                >
+                  By creating an account, you agree to our{" "}
+                  <a
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-[#6C2BD9] hover:underline"
+                    data-testid="link-signup-terms"
+                  >
+                    Terms of Service
+                  </a>{" "}
+                  and{" "}
+                  <a
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-[#6C2BD9] hover:underline"
+                    data-testid="link-signup-privacy"
+                  >
+                    Privacy Policy
+                  </a>
+                  .
+                </p>
+                <button
+                  type="submit"
+                  disabled={isRegistering}
+                  data-testid="button-register"
+                  className="w-full h-11 rounded-lg bg-gradient-to-r from-[#6C2BD9] to-[#A855F7] text-white font-medium text-sm hover:opacity-90 active:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+                >
+                  {isRegistering ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : (
+                    "Create Account"
+                  )}
+                </button>
+              </form>
+            )}
+
+            <div className="mt-5 pt-5 border-t border-gray-100 text-center">
+              <button
+                type="button"
+                onClick={() => setIsLoginMode(!isLoginMode)}
+                className="text-sm text-gray-500 hover:text-[#6C2BD9] transition-colors"
+                data-testid="button-toggle-auth-mode"
+              >
+                {isLoginMode ? (
+                  <>
+                    Don't have an account?{" "}
+                    <span className="font-medium text-[#6C2BD9]">Sign up</span>
+                  </>
+                ) : (
+                  <>
+                    Already have an account?{" "}
+                    <span className="font-medium text-[#6C2BD9]">Sign in</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
+      </section>
 
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-gray-400">
+      {/* Footer */}
+      <footer className="bg-[#FFF8EF] py-8 text-center text-xs text-gray-400">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
           <Link
             href="/privacy"
             className="text-gray-500 hover:text-[#6C2BD9] transition-colors"
@@ -414,7 +565,7 @@ export default function AuthPage() {
             Terms of Service
           </Link>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
