@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { GraduationCap, Menu, Shield } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { PrefetchLink } from "@/lib/prefetch-link";
@@ -108,6 +108,10 @@ export default function Navbar() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-80 bg-background/95 backdrop-blur-lg">
+              <SheetTitle className="sr-only">Navigation menu</SheetTitle>
+              <SheetDescription className="sr-only">
+                Links to the main sections of RS EduNav
+              </SheetDescription>
               <div className="flex flex-col h-full">
                 <div className="flex items-center mb-8 pt-4">
                   <div className="p-2 rounded-xl bg-primary/10 mr-4">
