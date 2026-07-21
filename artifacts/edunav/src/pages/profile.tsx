@@ -375,6 +375,14 @@ export default function ProfilePage() {
   };
 
   const handleSaveProfile = () => {
+    if (gpa) {
+      const parsedGpa = parseFloat(gpa);
+      if (Number.isNaN(parsedGpa) || parsedGpa < 0 || parsedGpa > 4.0) {
+        toast({ title: "Invalid GPA", description: "GPA must be between 0.0 and 4.0", variant: "destructive" });
+        return;
+      }
+    }
+
     const profileData: any = {};
     if (firstName) profileData.firstName = firstName;
     if (lastName) profileData.lastName = lastName;

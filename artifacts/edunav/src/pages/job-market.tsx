@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { debounce } from "@/lib/debounce";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -72,18 +73,30 @@ export default function JobMarket() {
   const [selectedCareer, setSelectedCareer] = useState<string>("");
   const [selectedState, setSelectedState] = useState<string>("CA");
   const [seriesIdInput, setSeriesIdInput] = useState("");
-  
+  const [debouncedSeriesId, setDebouncedSeriesId] = useState("");
+  const debouncedSetSeriesId = useMemo(
+    () => debounce((value: string) => setDebouncedSeriesId(value), 400),
+    []
+  );
+
+
   // Load supported careers from BLS mapping
   const { data: supportedCareers = [], isLoading: careersLoading } = useQuery<SupportedCareer[]>({
     queryKey: ['/api/job-market/careers'],
     staleTime: 60 * 60 * 1000, // Cache for 1 hour
   });
 
-  // Get job data for selected career
+  // Get job data for selected career. retry: false so a failure (e.g. the
+  // upstream BLS API being unavailable) resolves immediately and
+  // consistently instead of sitting in isLoading through react-query's
+  // default 3-attempt exponential-backoff retry, which could take 10+
+  // seconds and made otherwise-identical failures look inconsistent
+  // depending on exactly when the UI was checked mid-retry.
   const { data: jobData, isLoading: jobDataLoading, error: jobDataError } = useQuery<JobMarketData>({
     queryKey: [`/api/job-market/career/${encodeURIComponent(selectedCareer || '')}`],
     enabled: !!selectedCareer,
     staleTime: 15 * 60 * 1000, // Cache for 15 minutes
+    retry: false,
   });
 
   // Get state-specific data for selected career
@@ -91,13 +104,15 @@ export default function JobMarket() {
     queryKey: [`/api/job-market/state/${selectedState}/career/${encodeURIComponent(selectedCareer || '')}`],
     enabled: !!selectedCareer && !!selectedState,
     staleTime: 15 * 60 * 1000,
+    retry: false,
   });
 
   // Get data by BLS series ID
   const { data: seriesData, isLoading: seriesLoading } = useQuery<{data: any[]}>({
-    queryKey: [`/api/job-market/series/${seriesIdInput}`],
-    enabled: seriesIdInput.length > 10,
+    queryKey: [`/api/job-market/series/${debouncedSeriesId}`],
+    enabled: debouncedSeriesId.length > 10,
     staleTime: 15 * 60 * 1000,
+    retry: false,
   });
 
   // Cache management using localStorage
@@ -422,7 +437,10 @@ export default function JobMarket() {
                 id="seriesId"
                 placeholder="Enter BLS series ID (e.g., OEUN000000000000151131)"
                 value={seriesIdInput}
-                onChange={(e) => setSeriesIdInput(e.target.value)}
+                onChange={(e) => {
+                  setSeriesIdInput(e.target.value);
+                  debouncedSetSeriesId(e.target.value);
+                }}
                 className="font-mono"
               />
               <p className="text-xs text-gray-500 mt-1">

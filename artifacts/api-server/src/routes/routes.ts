@@ -1667,22 +1667,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get fellowship by ID
-  app.get("/api/fellowships/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const fellowship = await fellowshipService.getFellowshipById(id);
-      if (!fellowship) {
-        res.status(404).json({ error: "Fellowship not found" });
-        return;
-      }
-      res.json(fellowship);
-    } catch (error) {
-      console.error("Error fetching fellowship:", error);
-      res.status(500).json({ error: "Failed to fetch fellowship" });
-    }
-  });
-
   // Search fellowships with filters
   app.get("/api/fellowships/search", async (req, res) => {
     try {
@@ -1803,6 +1787,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get fellowship by ID. Registered last among the /api/fellowships GET
+  // routes deliberately: Express matches routes in registration order, and
+  // ":id" would otherwise greedily swallow every literal sibling path
+  // above it (/search, /filters, /saved all 404'd/500'd as a result before
+  // this was moved — "saved" was being parsed as an id and always failing).
+  app.get("/api/fellowships/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const fellowship = await fellowshipService.getFellowshipById(id);
+      if (!fellowship) {
+        res.status(404).json({ error: "Fellowship not found" });
+        return;
+      }
+      res.json(fellowship);
+    } catch (error) {
+      console.error("Error fetching fellowship:", error);
+      res.status(500).json({ error: "Failed to fetch fellowship" });
+    }
+  });
+
   // Update saved fellowship status
   app.put("/api/fellowships/:id/status", isAuthenticated, async (req: any, res) => {
     try {
@@ -1889,6 +1893,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           filteredUpdates[key] = updates[key];
         }
       });
+
+      if (filteredUpdates.gpa !== undefined) {
+        const gpaValue = Number(filteredUpdates.gpa);
+        if (Number.isNaN(gpaValue) || gpaValue < 0 || gpaValue > 4.0) {
+          res.status(400).json({ message: "GPA must be between 0.0 and 4.0" });
+          return;
+        }
+      }
+
       filteredUpdates.updatedAt = new Date();
       
       console.log("Profile update - saving demographics:", filteredUpdates.demographics);
