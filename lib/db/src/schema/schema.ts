@@ -68,7 +68,12 @@ export const users = pgTable("users", {
 
 export const colleges = pgTable("colleges", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
+  // Unique so onConflictDoNothing() calls in data-loader.ts/data-sources.ts
+  // actually do something — without this, every server restart that hits
+  // the "database already populated" top-up path re-inserted the same
+  // hardcoded popularColleges list as brand-new duplicate rows every time,
+  // since there was no constraint for a conflict to ever occur against.
+  name: text("name").notNull().unique(),
   location: text("location").notNull(),
   country: text("country").notNull(),
   state: text("state"),

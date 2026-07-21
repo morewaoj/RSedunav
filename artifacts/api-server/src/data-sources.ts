@@ -165,8 +165,13 @@ export class CollegeScorecardService {
     if (admissionRate < 0.2) score += 1;
     if (graduationRate > 0.8) score += 0.5;
     if (earnings > 50000) score += 0.5;
-    
-    return Math.min(5, Math.round(score * 2) / 2);
+
+    // The colleges.rating column is a plain integer and college-card.tsx
+    // just prints the raw number (no half-star rendering), so round to a
+    // whole number rather than the half-point precision this used to
+    // return — which would fail to insert entirely (invalid input syntax
+    // for type integer) the moment this ever ran against a real database.
+    return Math.min(5, Math.round(score));
   }
 
   private generateDescription(school: ScorecardSchool): string {
