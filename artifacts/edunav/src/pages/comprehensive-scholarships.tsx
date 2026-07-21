@@ -48,7 +48,8 @@ import {
 
 type ScholarshipRecsResponse = {
   recommendations?: Array<{
-    scholarship?: { name?: string | null } | null;
+    scholarship: Scholarship;
+    matchScore: number;
     matchReasons?: string[] | null;
   }>;
 };
@@ -166,39 +167,25 @@ export default function ComprehensiveScholarships() {
     queryKey: ['/api/scholarships/authentic'],
   });
 
-  // Get personalized scholarship recommendations
-  const { data: recommendations = [], isLoading: isLoadingRecommendations } = useQuery<ScholarshipMatch[]>({
-    queryKey: ['/api/scholarships/recommendations'],
-    queryFn: async () => {
-      if (!user) return [];
-      const response = await apiRequest('POST', '/api/scholarships/recommendations', {
-        userProfile: {
-          gpa: 3.5,
-          major: "Computer Science",
-          state: "Georgia",
-          demographics: ["first-generation"],
-          financialNeed: "medium",
-          interests: ["technology", "innovation"],
-          academicLevel: "undergraduate",
-          firstGeneration: true,
-          militaryAffiliation: false,
-          athleticParticipation: false
-        },
-        limit: 12
-      });
-      return response.json();
-    },
-    enabled: !!user,
-  });
-
-  // Personalized recs feed the per-card "why this matched" chips. Auth-gated;
-  // returns null for signed-out users (cards just render without chips).
+  // Personalized recommendations. This used to be a separate query that
+  // POSTed a hardcoded fake profile (GPA 3.5, "Computer Science", "Georgia")
+  // to /api/scholarships/recommendations regardless of who was signed in —
+  // every user saw recommendations for the same fictional person. This
+  // endpoint already did the right thing (reads the real signed-in user's
+  // stored profile server-side) but was only being used to look up "why
+  // this matched" chip text, not as the actual "For You" list. Consolidated
+  // onto the one that was already right instead of maintaining both.
   const profileRecsQ = useQuery<ScholarshipRecsResponse | null>({
     queryKey: ['/api/profile/scholarship-recommendations'],
     queryFn: getQueryFn<ScholarshipRecsResponse | null>({ on401: 'returnNull' }),
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
+
+  const recommendations = useMemo(
+    () => profileRecsQ.data?.recommendations ?? [],
+    [profileRecsQ.data]
+  );
 
   // Recs don't echo a stable id, so key on normalized name (matches mobile).
   const reasonsByName = useMemo(() => {
