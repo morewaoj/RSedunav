@@ -83,14 +83,13 @@ export default function AuthPage() {
     authCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="w-8 h-8 animate-spin text-[#6C2BD9]" />
-      </div>
-    );
-  }
-
+  // Deliberately not gating the whole page behind isLoading: this route
+  // doubles as the marketing landing page (see App.tsx — "/" bounces
+  // anonymous visitors here), and the /api/auth/user check it depends on
+  // goes through the free-tier Render backend, which can take up to ~50s
+  // to wake from a cold start. None of the hero/marketing content below
+  // needs that check to render, so only the auth card itself shows a
+  // scoped loading state while it's pending.
   if (user) {
     return <Redirect to={redirectTo} />;
   }
@@ -303,7 +302,11 @@ export default function AuthPage() {
                 : "Get started with personalized guidance"}
             </p>
 
-            {isLoginMode ? (
+            {isLoading ? (
+              <div className="flex justify-center py-8" data-testid="auth-form-loading">
+                <Loader2 className="w-6 h-6 animate-spin text-[#6C2BD9]" />
+              </div>
+            ) : isLoginMode ? (
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="login-username" className="text-sm font-medium text-gray-700">
