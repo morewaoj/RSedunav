@@ -1489,8 +1489,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
+      // Accepts ?startPage=N&maxPages=M so repeated calls can resume where
+      // the last one left off, instead of always re-walking from page 0
+      // (which is what a hardcoded hasPage>=20 cap used to force every
+      // single call to do, making repeated invocations pointless — they'd
+      // hit the same cap re-fetching pages already imported and never
+      // reach anything new).
       let allColleges = [];
-      let page = 0;
+      let page = Number(req.query.startPage) || 0;
+      const startPage = page;
+      const maxPages = Number(req.query.maxPages) || 20;
       let totalInserted = 0;
       const perPage = 100;
 
@@ -1567,18 +1575,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         page++;
-        
-        // Limit to prevent timeout - can be increased for full dataset
-        if (page >= 20) {
+
+        // Limit per call to prevent a request timeout — pass ?startPage
+        // on the next call to continue past here instead of restarting.
+        if (page - startPage >= maxPages) {
           console.log(`Stopping at page ${page} to prevent timeout. Inserted ${totalInserted} colleges.`);
           break;
         }
       }
-      
-      res.json({ 
+
+      res.json({
         message: `Successfully loaded ${totalInserted} colleges from College Scorecard API`,
         total_inserted: totalInserted,
-        pages_processed: page
+        pages_processed: page - startPage,
+        next_page: page
       });
     } catch (error) {
       console.error("College loading error:", error);
