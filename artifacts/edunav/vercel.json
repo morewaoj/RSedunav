@@ -3,6 +3,7 @@
   "buildCommand": "pnpm --filter @workspace/edunav run build",
   "outputDirectory": "dist/public",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://rsedunav-api.onrender.com/api/:path*" }
+    { "source": "/api/:path*", "destination": "https://rsedunav-api.onrender.com/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
