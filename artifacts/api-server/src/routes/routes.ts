@@ -1505,7 +1505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Fetch all pages of data from College Scorecard API
       while (true) {
         console.log(`Fetching page ${page} of colleges...`);
-        const response = await fetch(`https://api.data.gov/ed/collegescorecard/v1/schools?api_key=${process.env.COLLEGE_SCORECARD_API_KEY}&_page=${page}&_per_page=${perPage}&school.operating=1&fields=id,school.name,school.city,school.state,school.school_url,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.admissions.admission_rate.overall,latest.completion.completion_rate_4yr_100nt,school.ownership,school.degrees_awarded.predominant`);
+        const response = await fetch(`https://api.data.gov/ed/collegescorecard/v1/schools?api_key=${process.env.COLLEGE_SCORECARD_API_KEY}&_page=${page}&_per_page=${perPage}&school.operating=1&fields=id,school.name,school.city,school.state,school.school_url,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.admissions.admission_rate.overall,latest.completion.completion_rate_4yr_150nt,latest.completion.completion_rate_less_than_4yr_150nt,school.ownership,school.degrees_awarded.predominant`);
       
         if (!response.ok) {
           throw new Error(`College Scorecard API error: ${response.status}`);
@@ -1540,7 +1540,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             const rawUrl = college['school.school_url'];
             const website = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`) : null;
-            const rawGradRate = college['latest.completion.completion_rate_4yr_100nt'];
+            // 2-year/certificate schools never have a 4yr completion rate,
+            // so picking the field by degree level (instead of always
+            // reading completion_rate_4yr_*) is what actually lets real
+            // data reach community colleges instead of every one of them
+            // hitting the hardcoded fallback below.
+            const rawGradRate = (degreeLevel === 1 || degreeLevel === 2)
+              ? college['latest.completion.completion_rate_less_than_4yr_150nt']
+              : college['latest.completion.completion_rate_4yr_150nt'];
 
             const transformedCollege = {
               name: college['school.name'],
