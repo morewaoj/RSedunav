@@ -1505,7 +1505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Fetch all pages of data from College Scorecard API
       while (true) {
         console.log(`Fetching page ${page} of colleges...`);
-        const response = await fetch(`https://api.data.gov/ed/collegescorecard/v1/schools?api_key=${process.env.COLLEGE_SCORECARD_API_KEY}&_page=${page}&_per_page=${perPage}&school.operating=1&fields=id,school.name,school.city,school.state,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.admissions.admission_rate.overall,school.ownership,school.degrees_awarded.predominant`);
+        const response = await fetch(`https://api.data.gov/ed/collegescorecard/v1/schools?api_key=${process.env.COLLEGE_SCORECARD_API_KEY}&_page=${page}&_per_page=${perPage}&school.operating=1&fields=id,school.name,school.city,school.state,school.school_url,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.admissions.admission_rate.overall,latest.completion.completion_rate_4yr_100nt,school.ownership,school.degrees_awarded.predominant`);
       
         if (!response.ok) {
           throw new Error(`College Scorecard API error: ${response.status}`);
@@ -1538,6 +1538,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               academicLevel = 'graduate';
             }
 
+            const rawUrl = college['school.school_url'];
+            const website = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`) : null;
+            const rawGradRate = college['latest.completion.completion_rate_4yr_100nt'];
+
             const transformedCollege = {
               name: college['school.name'],
               location: `${college['school.city'] || 'Unknown'}, ${college['school.state']}, United States`,
@@ -1546,9 +1550,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               city: college['school.city'] || 'Unknown',
               tuition: college['latest.cost.tuition.in_state'] || college['latest.cost.tuition.out_of_state'] || 0,
               acceptanceRate: Math.round((college['latest.admissions.admission_rate.overall'] || 0.6) * 100),
-              graduationRate: 70,
+              graduationRate: rawGradRate != null ? Math.round(rawGradRate * 100) : 70,
               type: type,
-              website: null,
+              website,
               description: `${college['school.name']} is a ${type} institution located in ${college['school.city']}, ${college['school.state']}.`,
               imageUrl: null,
               rating: 4,
@@ -1562,9 +1566,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
 
             try {
-              await storage.createCollege(transformedCollege);
+              // upsert, not create: re-running this endpoint over a page
+              // range it already covered (e.g. to backfill a field a prior
+              // version of this handler mapped wrong — this is exactly
+              // that case, website used to be hardcoded null) now corrects
+              // existing rows instead of silently skipping every one as a
+              // duplicate.
+              await storage.upsertCollege(transformedCollege);
               totalInserted++;
-              
+
               if (totalInserted % 100 === 0) {
                 console.log(`Inserted ${totalInserted} colleges so far...`);
               }

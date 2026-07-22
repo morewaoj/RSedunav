@@ -77,6 +77,11 @@ export interface IStorage {
   getFilteredColleges(filters: CollegeFilters): Promise<College[]>;
   getCollegeById(id: number): Promise<College | undefined>;
   createCollege(college: InsertCollege): Promise<College>;
+  // Insert-or-update by name, used by the College Scorecard bulk import so
+  // re-running it (e.g. to backfill a field that a previous run mapped
+  // incorrectly) actually corrects existing rows instead of silently
+  // skipping every one as a duplicate.
+  upsertCollege(college: InsertCollege): Promise<College>;
   searchColleges(query: string): Promise<College[]>;
   clearColleges(): Promise<void>;
   
@@ -499,6 +504,17 @@ export class DatabaseStorage implements IStorage {
     const [newCollege] = await db.insert(colleges).values(college).returning();
     DatabaseStorage.collegeCache = null; // Invalidate cache
     return newCollege;
+  }
+
+  async upsertCollege(college: InsertCollege): Promise<College> {
+    const { name, ...rest } = college;
+    const [row] = await db
+      .insert(colleges)
+      .values(college)
+      .onConflictDoUpdate({ target: colleges.name, set: rest })
+      .returning();
+    DatabaseStorage.collegeCache = null; // Invalidate cache
+    return row;
   }
 
   async searchColleges(query: string): Promise<College[]> {
