@@ -172,20 +172,6 @@ export class SmartScholarshipMatcher {
       minGpa: 3.4
     },
     {
-      name: "Rural Student Educational Opportunity",
-      amount: 6000,
-      type: "need-based",
-      eligibilityRequirements: ["Rural background", "First-generation college student", "Financial need", "Academic achievement"],
-      deadline: "March 15, 2027",
-      renewable: true,
-      provider: "Rural Education Foundation",
-      website: "https://ruraleducation.org/scholarships",
-      description: "Supporting students from rural communities in pursuing higher education across all fields.",
-      targetDemographics: ["rural students", "first-generation college students", "undergraduate students", "graduate students"],
-      fields: ["general", "all majors", "law", "business", "education", "healthcare"],
-      minGpa: 2.5
-    },
-    {
       name: "Professional Women's Advancement Scholarship",
       amount: 7500,
       type: "merit-based",
@@ -395,6 +381,11 @@ export class SmartScholarshipMatcher {
       return {
         scholarship,
         score,
+        // The frontend renders this as "N% Match" — score itself is an
+        // unbounded internal ranking heuristic (stacking bonuses can push
+        // it well past 100), so clamp it to a sensible displayable range
+        // rather than showing e.g. "140% Match".
+        matchScore: Math.min(100, Math.max(0, score)),
         matchReasons: matchReasons.slice(0, 3)
       };
     })

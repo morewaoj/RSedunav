@@ -92,18 +92,18 @@ export default function Fellowships() {
     enabled: !!user,
   });
 
+  // /api/fellowships/match requires auth and reads the signed-in user's
+  // actual stored profile server-side — was previously calling
+  // /api/fellowships/match-public with a hardcoded fake profile (GPA 3.5,
+  // "Technology, Research", graduate), so every user got the same
+  // fictional person's matches regardless of who they actually were.
   const { data: matchedFellowships, isLoading: isLoadingMatches } = useQuery<{ matches: FellowshipMatch[] }>({
-    queryKey: ['/api/fellowships/match-public', user],
+    queryKey: ['/api/fellowships/match', user?.id],
     queryFn: async () => {
-      const profile = {
-        gpa: 3.5,
-        interests: ["Technology", "Research"],
-        academicLevel: "graduate"
-      };
-      const response = await apiRequest('POST', '/api/fellowships/match-public', profile);
+      const response = await apiRequest('POST', '/api/fellowships/match', {});
       return response.json();
     },
-    enabled: activeTab === 'for-you',
+    enabled: activeTab === 'for-you' && !!user,
   });
 
   const saveFellowshipMutation = useMutation({
@@ -516,7 +516,18 @@ export default function Fellowships() {
               </div>
             </Card>
 
-            {isLoadingMatches ? (
+            {!user ? (
+              <Card className="p-8 text-center">
+                <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="font-semibold text-lg mb-2">Sign In for Personalized Matches</h3>
+                <p className="text-muted-foreground mb-4">
+                  Create an account so we can match fellowships to your actual profile
+                </p>
+                <Link href="/auth">
+                  <Button>Sign In</Button>
+                </Link>
+              </Card>
+            ) : isLoadingMatches ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {[1, 2, 3].map(i => (
                   <Card key={i} className="animate-pulse">
