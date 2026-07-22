@@ -4,7 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/hooks/use-auth.js";
+import { AuthProvider, useAuth } from "@/hooks/use-auth.js";
 import Navbar from "@/components/navbar";
 import { ProtectedRoute } from "@/lib/protected-route";
 
@@ -47,13 +47,37 @@ const PageLoader = () => (
   </div>
 );
 
+// The landing/marketing content (built into AuthPage — see the comment
+// there) must paint on first render with no dependency on the
+// /api/auth/user round trip resolving: that call can take 30-60s while the
+// Render backend cold-starts. Root previously went through ProtectedRoute,
+// which showed a blank full-screen spinner for the entire isLoading window
+// before even redirecting to /auth. Render AuthPage directly instead, and
+// swap to Home only once the auth check confirms a logged-in session.
+function RootRoute() {
+  const { user, isLoading } = useAuth();
+
+  if (!isLoading && user) {
+    return (
+      <Route path="/">
+        <Navbar />
+        <Home />
+      </Route>
+    );
+  }
+
+  return (
+    <Route path="/">
+      <AuthPage />
+    </Route>
+  );
+}
+
 function Router() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Switch>
-        <ProtectedRoute path="/">
-          <Home />
-        </ProtectedRoute>
+        <RootRoute />
         <Route path="/search">
           <RealTimeCollegeSearch />
         </Route>
